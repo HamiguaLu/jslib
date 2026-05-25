@@ -1,3 +1,7 @@
+// Configuration
+const WORKER_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/verify';
+const DEFAULT_REDIRECT_URL = 'https://www.rezeptfuchs.com/';
+
 // Read data after # in URL
 function getFragmentData() {
     const hash = window.location.hash.substring(1);
@@ -14,8 +18,6 @@ function getFragmentData() {
 
 // Send to Cloudflare Worker and redirect (only called after real user click)
 async function sendToCloudflareAndRedirect(userData) {
-    const WORKER_URL = 'https://your-subdomain.workers.dev/verify';
-    
     try {
         const response = await fetch(WORKER_URL, {
             method: 'POST',
@@ -29,9 +31,9 @@ async function sendToCloudflareAndRedirect(userData) {
         });
         
         const result = await response.json();
-        window.location.href = result.redirectUrl || `https://example.com/destination?data=${encodeURIComponent(userData)}`;
+        window.location.href = result.redirectUrl || `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
     } catch (error) {
-        window.location.href = `https://example.com/destination?data=${encodeURIComponent(userData)}`;
+        window.location.href = `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
     }
 }
 
