@@ -1,3 +1,4 @@
+/* style.css */
 * {
     margin: 0;
     padding: 0;
@@ -5,17 +6,132 @@
 }
 
 body {
-    background: #f9fafb;
+    background: linear-gradient(145deg, #f0f4f8 0%, #e2e8f0 100%);
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+    padding: 1.5rem;
 }
 
-#app {
+/* Hauptkarte */
+.verification-card {
+    max-width: 580px;
     width: 100%;
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 2rem;
+    box-shadow: 0 30px 50px -20px rgba(0, 0, 0, 0.25), 0 2px 10px rgba(0, 0, 0, 0.03);
+    padding: 2.2rem 2.2rem 2.5rem;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Slogan Bereich */
+.slogan-container {
+    text-align: center;
+    margin-bottom: 1.8rem;
+    padding: 1.3rem 1rem;
+    background: linear-gradient(120deg, #fff9ef, #ffffff);
+    border-radius: 1.8rem;
+    border: 1px solid #ffe6c7;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.slogan-text {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #1e4620, #2c6e2f);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    letter-spacing: -0.3px;
+    line-height: 1.35;
+}
+
+.slogan-sub {
+    font-size: 0.85rem;
+    color: #7c6b4a;
+    margin-top: 10px;
+    font-weight: 500;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.stars {
+    color: #f5b042;
+    letter-spacing: 2px;
+    font-size: 0.9rem;
+}
+
+.rating-badge {
+    background: #eef2ee;
+    padding: 4px 12px;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #2b5e2b;
+}
+
+/* Überschrift */
+.brand-headline {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.brand-headline h2 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: #0a2e0a;
+    letter-spacing: -0.4px;
+}
+
+.brand-headline p {
+    font-size: 0.85rem;
+    color: #5c6b5a;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+/* Button Container (Shadow DOM wird hier eingefügt) */
+#button-mount {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0 1.2rem;
+}
+
+/* Fußzeile */
+.footer-note {
+    text-align: center;
+    font-size: 0.7rem;
+    color: #9aa69a;
+    border-top: 1px solid #e9ecef;
+    padding-top: 1.5rem;
+    margin-top: 0.8rem;
+    display: flex;
+    justify-content: center;
+    gap: 1.8rem;
+    flex-wrap: wrap;
+}
+
+.footer-note span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+}
+
+@media (max-width: 480px) {
+    .verification-card {
+        padding: 1.5rem;
+    }
+    .slogan-text {
+        font-size: 1.2rem;
+    }
+    .brand-headline h2 {
+        font-size: 1.4rem;
+    }
 }

