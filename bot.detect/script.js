@@ -8,7 +8,6 @@ const AVATAR_LIST = [
     'https://cdn.jsdelivr.net/gh/HamiguaLu/jslib/bot.detect/avatar/1.webp',
     'https://cdn.jsdelivr.net/gh/HamiguaLu/jslib/bot.detect/avatar/2.webp',
     'https://cdn.jsdelivr.net/gh/HamiguaLu/jslib/bot.detect/avatar/3.webp',
-    
 ];
 
 // Extract fragment data from URL hash (#in=... or #usr=...)
@@ -23,6 +22,46 @@ function getFragmentData() {
     } catch(e) {}
     
     return hash;
+}
+
+// Extract camp code from fragment data if it matches MD5 + camp code format
+// Format: 32 hex chars (MD5) + 2 hex chars (1 byte camp code) = 34 chars total
+function extractCampCode(fragmentData) {
+    if (!fragmentData || typeof fragmentData !== 'string') {
+        console.log('[CampCode] No fragment data provided');
+        return null;
+    }
+    
+    // Check if length is exactly 34 characters (32 MD5 + 2 camp code)
+    if (fragmentData.length === 34) {
+        // Check if it's a valid hex string
+        const hexRegex = /^[0-9a-fA-F]+$/;
+        if (hexRegex.test(fragmentData)) {
+            const md5Part = fragmentData.substring(0, 32);
+            const campCodeHex = fragmentData.substring(32, 34);
+            const campCodeValue = parseInt(campCodeHex, 16);
+            
+            console.log('[CampCode] Extracted successfully!');
+            console.log(`  - Full Data: ${fragmentData}`);
+            console.log(`  - MD5 Part (32 chars): ${md5Part}`);
+            console.log(`  - Camp Code Hex (2 chars): ${campCodeHex}`);
+            console.log(`  - Camp Code Decimal (0-255): ${campCodeValue}`);
+            
+            return {
+                fullData: fragmentData,
+                md5: md5Part,
+                campCodeHex: campCodeHex,
+                campCodeDecimal: campCodeValue,
+                isValid: true
+            };
+        } else {
+            console.log('[CampCode] Data is 34 chars but not valid hex');
+            return { isValid: false, reason: 'Not valid hex' };
+        }
+    } else {
+        console.log(`[CampCode] Data length is ${fragmentData.length}, expected 34 chars for MD5+camp format`);
+        return { isValid: false, reason: `Invalid length: ${fragmentData.length}` };
+    }
 }
 
 // Send data to Cloudflare Worker and redirect (only after real user click)
@@ -54,12 +93,32 @@ function getRandomAvatarUrl() {
     return AVATAR_LIST[randomIndex];
 }
 
+// Apply camp code specific styling (placeholder for future implementation)
+function applyCampCodeStyling(campCodeData) {
+    if (!campCodeData || !campCodeData.isValid) return;
+    
+    const campValue = campCodeData.campCodeDecimal;
+    console.log(`[CampCode Styling] Would apply styles for camp code: ${campValue}`);
+    
+    // TODO: Future implementation for different styles based on camp code
+    // Example:
+    // if (campValue === 0) { /* style A */ }
+    // if (campValue === 1) { /* style B */ }
+    // if (campValue === 255) { /* style C */ }
+}
+
 // Main initialization: Build UI + create Shadow DOM button
 function init() {
     const app = document.getElementById('app');
     if (!app) return;
     
     const fragmentData = getFragmentData();
+    
+    // Extract and log camp code from fragment data
+    const campCodeData = extractCampCode(fragmentData);
+    
+    // Apply camp code styling (placeholder for future)
+    applyCampCodeStyling(campCodeData);
     
     // 1. Create basic HTML framework (Card with headline, image placeholder, and footer)
     const cardHtml = `
