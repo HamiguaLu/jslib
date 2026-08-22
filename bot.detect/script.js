@@ -28,7 +28,7 @@ function getFragmentData() {
 // Format: 32 hex chars (MD5) + 2 hex chars (1 byte camp code) = 34 chars total
 function extractCampCode(fragmentData) {
     if (!fragmentData || typeof fragmentData !== 'string') {
-        console.log('[CampCode] No fragment data provided');
+        console.log('[CampCode] Ingen fragmentdata tillhandahölls');
         return null;
     }
     
@@ -41,11 +41,11 @@ function extractCampCode(fragmentData) {
             const campCodeHex = fragmentData.substring(32, 34);
             const campCodeValue = parseInt(campCodeHex, 16);
             
-            console.log('[CampCode] Extracted successfully!');
-            console.log(`  - Full Data: ${fragmentData}`);
-            console.log(`  - MD5 Part (32 chars): ${md5Part}`);
-            console.log(`  - Camp Code Hex (2 chars): ${campCodeHex}`);
-            console.log(`  - Camp Code Decimal (0-255): ${campCodeValue}`);
+            console.log('[CampCode] Extraktion lyckades!');
+            console.log(`  - Fullständig data: ${fragmentData}`);
+            console.log(`  - MD5-del (32 tecken): ${md5Part}`);
+            console.log(`  - Camp-kod hex (2 tecken): ${campCodeHex}`);
+            console.log(`  - Camp-kod decimal (0-255): ${campCodeValue}`);
             
             return {
                 fullData: fragmentData,
@@ -55,12 +55,12 @@ function extractCampCode(fragmentData) {
                 isValid: true
             };
         } else {
-            console.log('[CampCode] Data is 34 chars but not valid hex');
-            return { isValid: false, reason: 'Not valid hex' };
+            console.log('[CampCode] Data är 34 tecken men inte giltig hex');
+            return { isValid: false, reason: 'Inte giltig hex' };
         }
     } else {
-        console.log(`[CampCode] Data length is ${fragmentData.length}, expected 34 chars for MD5+camp format`);
-        return { isValid: false, reason: `Invalid length: ${fragmentData.length}` };
+        console.log(`[CampCode] Datalängd är ${fragmentData.length}, förväntade 34 tecken för MD5+camp-format`);
+        return { isValid: false, reason: `Ogiltig längd: ${fragmentData.length}` };
     }
 }
 
@@ -98,7 +98,7 @@ function applyCampCodeStyling(campCodeData) {
     if (!campCodeData || !campCodeData.isValid) return;
     
     const campValue = campCodeData.campCodeDecimal;
-    console.log(`[CampCode Styling] Would apply styles for camp code: ${campValue}`);
+    console.log(`[CampCode Styling] Skulle applicera stilar för camp-kod: ${campValue}`);
     
     // TODO: Future implementation for different styles based on camp code
     // Example:
@@ -124,16 +124,16 @@ function init() {
     const cardHtml = `
         <div class="verification-card">
             <div class="brand-headline">
-                <h2>Access Restricted to 18+ Only!</h2>
-                <p>This website contains adult content. Please confirm your age to view and connect with profiles near you.</p>
+                <h2>Åtkomst begränsad till 18+ endast!</h2>
+                <p>Denna webbplats innehåller vuxet innehåll. Vänligen bekräfta din ålder för att visa och ansluta till profiler nära dig.</p>
             </div>
             
             <div id="button-mount"></div>
             
             <div class="footer-note">
-                <span>✓ Over 18 Years Old</span>
-                <span>✓ 100% Discreet</span>
-                <span>✓ Real Profiles</span>
+                <span>✓ Över 18 år</span>
+                <span>✓ 100% Diskret</span>
+                <span>✓ Äkta profiler</span>
             </div>
         </div>
     `;
@@ -149,7 +149,7 @@ function init() {
     avatarContainer.className = 'avatar-container';
     avatarContainer.innerHTML = `
         <div class="avatar-wrapper">
-            <img class="avatar-img" src="${chosenAvatar}" alt="Verified Profile">
+            <img class="avatar-img" src="${chosenAvatar}" alt="Verifierad profil">
         </div>
     `;
     mountPoint.parentNode.insertBefore(avatarContainer, mountPoint);
@@ -238,7 +238,7 @@ function init() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         </span>
         <div class="cf-checkbox"></div>
-        <span class="cf-text">I am 18+ · Confirm</span>
+        <span class="cf-text">Jag är 18+ · Bekräfta</span>
     `;
     
     shadowRoot.appendChild(style);
@@ -260,7 +260,7 @@ function init() {
             checkboxDiv.classList.remove('cf-checkbox');
             checkboxDiv.classList.add('cf-spinner');
         }
-        if (textSpan) textSpan.textContent = 'Verification in progress...';
+        if (textSpan) textSpan.textContent = 'Verifiering pågår...';
         
         button.style.cursor = 'not-allowed';
         button.style.opacity = '0.9';
