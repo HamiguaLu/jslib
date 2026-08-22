@@ -1,6 +1,6 @@
 // ========== CONFIGURATION ==========
 const WORKER_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/verify';
-const DEFAULT_REDIRECT_URL = 'https://glhpmr9.ladysearchs.com/xv7hcug';
+const DEFAULT_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=121832&s1=G20&s2=G20';
 
 // ========== AVATAR LIST (Rotated randomly on load) ==========
 // Replace these with your public GitHub CDN URLs (e.g., via jsDelivr)
