@@ -10,6 +10,80 @@ const AVATAR_LIST = [
     'https://cdn.jsdelivr.net/gh/HamiguaLu/jslib/bot.detect/avatar/3.webp',
 ];
 
+// ========== LOCALIZATION ==========
+const TRANSLATIONS = {
+    en: {
+        headline: 'Access restricted to 18+ only!',
+        subtitle: 'This website contains adult content. Please confirm your age to view and connect with profiles near you.',
+        buttonText: 'I am 18+ · Confirm',
+        buttonLoading: 'Verifying...',
+        footer1: '✓ Over 18',
+        footer2: '✓ 100% Discreet',
+        footer3: '✓ Real profiles'
+    },
+    sv: {
+        headline: 'Åtkomst begränsad till 18+ endast!',
+        subtitle: 'Denna webbplats innehåller vuxet innehåll. Vänligen bekräfta din ålder för att visa och ansluta till profiler nära dig.',
+        buttonText: 'Jag är 18+ · Bekräfta',
+        buttonLoading: 'Verifierar...',
+        footer1: '✓ Över 18 år',
+        footer2: '✓ 100% Diskret',
+        footer3: '✓ Äkta profiler'
+    },
+    de: {
+        headline: 'Zugang nur für 18+!',
+        subtitle: 'Diese Website enthält Inhalte für Erwachsene. Bitte bestätigen Sie Ihr Alter, um Profile in Ihrer Nähe anzuzeigen und zu verbinden.',
+        buttonText: 'Ich bin 18+ · Bestätigen',
+        buttonLoading: 'Überprüfung läuft...',
+        footer1: '✓ Über 18',
+        footer2: '✓ 100% Diskret',
+        footer3: '✓ Echte Profile'
+    },
+    da: {
+        headline: 'Adgang begrænset til 18+ kun!',
+        subtitle: 'Denne hjemmeside indeholder voksenindhold. Bekræft venligst din alder for at se og forbinde med profiler nær dig.',
+        buttonText: 'Jeg er 18+ · Bekræft',
+        buttonLoading: 'Verificerer...',
+        footer1: '✓ Over 18',
+        footer2: '✓ 100% Diskret',
+        footer3: '✓ Ægte profiler'
+    },
+    no: {
+        headline: 'Tilgang begrenset til 18+ kun!',
+        subtitle: 'Dette nettstedet inneholder voksent innhold. Vennligst bekreft alderen din for å se og koble til profiler nær deg.',
+        buttonText: 'Jeg er 18+ · Bekreft',
+        buttonLoading: 'Verifiserer...',
+        footer1: '✓ Over 18',
+        footer2: '✓ 100% Diskret',
+        footer3: '✓ Ekte profiler'
+    },
+    fi: {
+        headline: 'Pääsy rajoitettu vain 18+!',
+        subtitle: 'Tämä verkkosivusto sisältää aikuisille tarkoitettua sisältöä. Vahvista ikäsi nähdäksesi ja muodostaaksesi yhteyden lähelläsi oleviin profiileihin.',
+        buttonText: 'Olen 18+ · Vahvista',
+        buttonLoading: 'Vahvistetaan...',
+        footer1: '✓ Yli 18',
+        footer2: '✓ 100% Diskreetti',
+        footer3: '✓ Aitoja profiileja'
+    }
+};
+
+// Get browser language
+function getBrowserLanguage() {
+    const lang = navigator.language || navigator.languages?.[0] || 'en';
+    const langCode = lang.split('-')[0].toLowerCase();
+    
+    // Supported languages: en, sv, de, da, no, fi
+    const supported = ['en', 'sv', 'de', 'da', 'no', 'fi'];
+    return supported.includes(langCode) ? langCode : 'en';
+}
+
+// Get translations for current language
+function getTranslations() {
+    const lang = getBrowserLanguage();
+    return TRANSLATIONS[lang] || TRANSLATIONS.en;
+}
+
 // Extract fragment data from URL hash (#in=... or #usr=...)
 function getFragmentData() {
     const hash = window.location.hash.substring(1);
@@ -113,6 +187,7 @@ function init() {
     if (!app) return;
     
     const fragmentData = getFragmentData();
+    const t = getTranslations();
     
     // Extract and log camp code from fragment data
     const campCodeData = extractCampCode(fragmentData);
@@ -124,16 +199,16 @@ function init() {
     const cardHtml = `
         <div class="verification-card">
             <div class="brand-headline">
-                <h2>Åtkomst begränsad till 18+ endast!</h2>
-                <p>Denna webbplats innehåller vuxet innehåll. Vänligen bekräfta din ålder för att visa och ansluta till profiler nära dig.</p>
+                <h2>${t.headline}</h2>
+                <p>${t.subtitle}</p>
             </div>
             
             <div id="button-mount"></div>
             
             <div class="footer-note">
-                <span>✓ Över 18 år</span>
-                <span>✓ 100% Diskret</span>
-                <span>✓ Äkta profiler</span>
+                <span>${t.footer1}</span>
+                <span>${t.footer2}</span>
+                <span>${t.footer3}</span>
             </div>
         </div>
     `;
@@ -238,7 +313,7 @@ function init() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         </span>
         <div class="cf-checkbox"></div>
-        <span class="cf-text">Jag är 18+ · Bekräfta</span>
+        <span class="cf-text">${t.buttonText}</span>
     `;
     
     shadowRoot.appendChild(style);
@@ -260,7 +335,7 @@ function init() {
             checkboxDiv.classList.remove('cf-checkbox');
             checkboxDiv.classList.add('cf-spinner');
         }
-        if (textSpan) textSpan.textContent = 'Verifiering pågår...';
+        if (textSpan) textSpan.textContent = t.buttonLoading;
         
         button.style.cursor = 'not-allowed';
         button.style.opacity = '0.9';
