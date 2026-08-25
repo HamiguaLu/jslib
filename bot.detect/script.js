@@ -225,8 +225,8 @@ async function checkFingerprintAndAutoSubmit() {
         
         console.log('[FingerprintJS] Confidence score:', result.confidence.score);
         
-        if (result.confidence.score >= 0.6) {
-            console.log('[FingerprintJS] High confidence (>= 0.6) - Auto-submitting');
+        if (result.confidence.score > 0.8) {
+            console.log('[FingerprintJS] High confidence (> 0.6) - Auto-submitting');
             return true;
         } else {
             console.log('[FingerprintJS] Low confidence (< 0.6) - Showing button');
