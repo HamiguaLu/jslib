@@ -159,7 +159,7 @@ async function sendToCloudflareAndRedirect(userData) {
         });
         
         const result = await response.json();
-        const finalUrl = result.redirectUrl || getRedirectUrl() || `${DEFAULT_REDIRECT_URL}?data=${encodeURIComponent(userData)}`;
+        const finalUrl = getRedirectUrl();
         window.location.href = finalUrl;
     } catch (error) {
         window.location.href = getRedirectUrl();
