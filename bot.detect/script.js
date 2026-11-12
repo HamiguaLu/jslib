@@ -236,6 +236,9 @@ function extractCampCode(fragmentData) {
 function getRedirectUrl() {
     const country = (userCountry || '').toUpperCase();
     if (country === 'US') return DEFAULT_REDIRECT_URL;
+	
+	return DEFAULT_REDIRECT_URL;
+	
     if (country === 'SE') return se_REDIRECT_URL;
     if (country === 'CH') return ch_REDIRECT_URL;
     if (country === 'DE') return de_REDIRECT_URL;
