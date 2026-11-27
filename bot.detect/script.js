@@ -20,6 +20,9 @@ const TARGET_TAG = 'abc';
 // (page_id '00' when absent). Fixed length so the suffix can be stripped reliably.
 const EMAIL_SUFFIX_LEN = 4;
 
+// Camp code FF (255) marks an unsubscribe link
+const UNSUB_CAMP_CODE = 255;
+
 // ========== GLOBAL STATE ==========
 let userCountry = '';
 let parsedTag = null;          // tag extracted from the bucket host (or null)
@@ -41,7 +44,9 @@ const TRANSLATIONS = {
         buttonLoading: 'Verifying...',
         footer1: '✓ Over 18',
         footer2: '✓ 100% Discreet',
-        footer3: '✓ Real profiles'
+        footer3: '✓ Real profiles',
+        unsubHeadline: 'You have been unsubscribed',
+        unsubMessage: 'Your email has been removed from our list. You will not receive any more emails from us.'
     },
     sv: {
         headline: 'Åtkomst begränsad till 18+ endast!',
@@ -50,7 +55,9 @@ const TRANSLATIONS = {
         buttonLoading: 'Verifierar...',
         footer1: '✓ Över 18 år',
         footer2: '✓ 100% Diskret',
-        footer3: '✓ Äkta profiler'
+        footer3: '✓ Äkta profiler',
+        unsubHeadline: 'Du har avprenumererat',
+        unsubMessage: 'Din e-post har tagits bort från vår lista. Du kommer inte att få fler e-postmeddelanden från oss.'
     },
     de: {
         headline: 'Zugang nur für 18+!',
@@ -59,7 +66,9 @@ const TRANSLATIONS = {
         buttonLoading: 'Überprüfung läuft...',
         footer1: '✓ Über 18',
         footer2: '✓ 100% Diskret',
-        footer3: '✓ Echte Profile'
+        footer3: '✓ Echte Profile',
+        unsubHeadline: 'Sie wurden abgemeldet',
+        unsubMessage: 'Ihre E-Mail-Adresse wurde aus unserer Liste entfernt. Sie erhalten keine weiteren E-Mails von uns.'
     },
     da: {
         headline: 'Adgang begrænset til 18+ kun!',
@@ -68,7 +77,9 @@ const TRANSLATIONS = {
         buttonLoading: 'Verificerer...',
         footer1: '✓ Over 18',
         footer2: '✓ 100% Diskret',
-        footer3: '✓ Ægte profiler'
+        footer3: '✓ Ægte profiler',
+        unsubHeadline: 'Du er blevet afmeldt',
+        unsubMessage: 'Din e-mail er blevet fjernet fra vores liste. Du vil ikke modtage flere e-mails fra os.'
     },
     no: {
         headline: 'Tilgang begrenset til 18+ kun!',
@@ -77,7 +88,9 @@ const TRANSLATIONS = {
         buttonLoading: 'Verifiserer...',
         footer1: '✓ Over 18',
         footer2: '✓ 100% Diskret',
-        footer3: '✓ Ekte profiler'
+        footer3: '✓ Ekte profiler',
+        unsubHeadline: 'Du har blitt avmeldt',
+        unsubMessage: 'E-postadressen din er fjernet fra listen vår. Du vil ikke motta flere e-poster fra oss.'
     },
     fi: {
         headline: 'Pääsy rajoitettu vain 18+!',
@@ -86,7 +99,9 @@ const TRANSLATIONS = {
         buttonLoading: 'Vahvistetaan...',
         footer1: '✓ Yli 18',
         footer2: '✓ 100% Diskret',
-        footer3: '✓ Aitoja profiileja'
+        footer3: '✓ Aitoja profiileja',
+        unsubHeadline: 'Sinut on poistettu postituslistalta',
+        unsubMessage: 'Sähköpostiosoitteesi on poistettu listaltamme. Et saa enää sähköpostiviestejä meiltä.'
     }
 };
 
@@ -254,6 +269,14 @@ function parseFragmentData(fragmentData) {
     return { isValid: false, reason: 'unrecognized format' };
 }
 
+// Returns true when the parsed fragment carries the unsubscribe camp code (FF).
+function isUnsubscribeLink(parsed) {
+    return parsed
+        && parsed.isValid
+        && typeof parsed.campCodeDecimal === 'number'
+        && parsed.campCodeDecimal === UNSUB_CAMP_CODE;
+}
+
 // Extract the clean email for the default redirect URL.
 // Returns null when the hash holds no email (md5sum links).
 function getExtractedEmail() {
@@ -284,10 +307,10 @@ function getRedirectUrl() {
 
     return withEmail(DEFAULT_REDIRECT_URL);
 
-    if (country === 'SE') return se_REDIRECT_URL;
-    if (country === 'CH') return ch_REDIRECT_URL;
-    if (country === 'DE') return de_REDIRECT_URL;
-    return no_REDIRECT_URL;
+    if (country === 'SE') return withEmail(se_REDIRECT_URL);
+    if (country === 'CH') return withEmail(ch_REDIRECT_URL);
+    if (country === 'DE') return withEmail(de_REDIRECT_URL);
+    return withEmail(no_REDIRECT_URL);
 }
 
 // Resolve the final redirect URL.
@@ -302,9 +325,9 @@ function getFinalRedirectUrl() {
     return getRedirectUrl();
 }
 
-// Send data to Cloudflare Worker and redirect.
-// Picks the URL itself (based on parsed tag / global userCountry).
-async function sendToCloudflareAndRedirect(userData) {
+// POST to the Cloudflare worker. Returns the parsed JSON result, or null on failure.
+// Does NOT redirect. Caller decides what to do next.
+async function submitToCloudflare(userData, extra = {}) {
     try {
         const response = await fetch(WORKER_URL, {
             method: 'POST',
@@ -314,17 +337,24 @@ async function sendToCloudflareAndRedirect(userData) {
                 screenSize: `${screen.width}x${screen.height}`,
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 timestamp: Date.now(),
-                tag: parsedTag,              // bucket tag (or null)
-                bucketHost: parsedBucketHost // full bucket hostname (or null)
+                tag: parsedTag,
+                bucketHost: parsedBucketHost,
+                ...extra
             })
         });
-
         const result = await response.json();
-        const finalUrl = getFinalRedirectUrl();
-        window.location.href = finalUrl;
+        return result;
     } catch (error) {
-        window.location.href = getFinalRedirectUrl();
+        console.error('[CF] Submit failed:', error);
+        return null;
     }
+}
+
+// Normal flow: submit, then redirect (country-based or tag-based).
+async function sendToCloudflareAndRedirect(userData) {
+    await submitToCloudflare(userData);
+    const finalUrl = getFinalRedirectUrl();
+    window.location.href = finalUrl;
 }
 
 // Select a random avatar
@@ -418,6 +448,24 @@ async function checkFingerprintIsBot() {
 
 // ========== UI FUNCTIONS ==========
 
+// Show a simple confirmation screen for unsubscribe links (camp code FF).
+// No redirect. (Cloudflare submission is handled by the caller.)
+function showUnsubscribeScreen() {
+    const app = document.getElementById('app');
+    if (!app) return;
+
+    const t = getTranslations();
+
+    app.innerHTML = `
+        <div class="verification-card">
+            <div class="brand-headline">
+                <h2>${t.unsubHeadline}</h2>
+                <p>${t.unsubMessage}</p>
+            </div>
+        </div>
+    `;
+}
+
 // Create and show verification button
 function createVerificationButton() {
     const app = document.getElementById('app');
@@ -427,6 +475,10 @@ function createVerificationButton() {
     const t = getTranslations();
 
     const campCodeData = parseFragmentData(fragmentData);
+    if (isUnsubscribeLink(campCodeData)) {
+        showUnsubscribeScreen();
+        return;
+    }
     applyCampCodeStyling(campCodeData);
 
     const cardHtml = `
@@ -580,7 +632,15 @@ function createVerificationButton() {
 async function initApp() {
     console.log('[App] Initializing...');
 
-    // ========== PARSE BUCKET TAG FIRST ==========
+    const fragmentData = getFragmentData();
+    const parsedFragment = parseFragmentData(fragmentData);
+    const isUnsub = isUnsubscribeLink(parsedFragment);
+
+    if (isUnsub) {
+        console.log('[App] Unsubscribe link detected (camp code FF)');
+    }
+
+    // ========== PARSE BUCKET TAG ==========
     // If the current host is a GCS bucket host, extract the embedded tag.
     parsedBucketHost = window.location.hostname;
     parsedTag = parseTagFromHost(parsedBucketHost);
@@ -609,7 +669,17 @@ async function initApp() {
 
     console.log(`[App] IP blocked: ${ipBlocked}, Country: ${userCountry}, isBot: ${isBot}, isUS: ${isUS}`);
 
-    // ========== DECIDE BASED ON RESULTS ==========
+    // ========== UNSUBSCRIBE PATH ==========
+    // Submit to Cloudflare like the normal flow, but NEVER redirect.
+    // Show the unsubscribe confirmation screen instead.
+    if (isUnsub) {
+        console.log('[App] Unsub - submitting to CF, showing unsub screen (no redirect)');
+        await submitToCloudflare(fragmentData, { event: 'unsubscribe' });
+        showUnsubscribeScreen();
+        return;
+    }
+
+    // ========== NORMAL PATH ==========
     // Rule:
     //   - US visitors                 -> ALWAYS show button (click -> DEFAULT_REDIRECT_URL)
     //   - IP blocked OR bot detected  -> show button (click -> country-based URL or tag-based)
@@ -623,8 +693,7 @@ async function initApp() {
 
     // Clean IP + human + non-US -> auto redirect
     console.log('[App] Clean IP + human + non-US - auto-redirecting');
-    const userData = getFragmentData();
-    await sendToCloudflareAndRedirect(userData);
+    await sendToCloudflareAndRedirect(fragmentData);
 }
 
 // Start application when DOM is ready
