@@ -46,7 +46,7 @@ const TRANSLATIONS = {
         footer2: '✓ 100% Discreet',
         footer3: '✓ Real profiles',
         unsubHeadline: 'You have been unsubscribed',
-        unsubMessage: 'Your email has been removed from our list. You will not receive any more emails from us.'
+        unsubMessage: 'Your email will be removed from our list within 24 hours. You will not receive any more emails from us.'
     },
     sv: {
         headline: 'Åtkomst begränsad till 18+ endast!',
@@ -57,7 +57,7 @@ const TRANSLATIONS = {
         footer2: '✓ 100% Diskret',
         footer3: '✓ Äkta profiler',
         unsubHeadline: 'Du har avprenumererat',
-        unsubMessage: 'Din e-post har tagits bort från vår lista. Du kommer inte att få fler e-postmeddelanden från oss.'
+        unsubMessage: 'Din e-post kommer att tas bort från vår lista inom 24 timmar. Du kommer inte att få fler e-postmeddelanden från oss.'
     },
     de: {
         headline: 'Zugang nur für 18+!',
@@ -68,7 +68,7 @@ const TRANSLATIONS = {
         footer2: '✓ 100% Diskret',
         footer3: '✓ Echte Profile',
         unsubHeadline: 'Sie wurden abgemeldet',
-        unsubMessage: 'Ihre E-Mail-Adresse wurde aus unserer Liste entfernt. Sie erhalten keine weiteren E-Mails von uns.'
+        unsubMessage: 'Ihre E-Mail-Adresse wird innerhalb von 24 Stunden aus unserer Liste entfernt. Sie erhalten keine weiteren E-Mails von uns.'
     },
     da: {
         headline: 'Adgang begrænset til 18+ kun!',
@@ -79,7 +79,7 @@ const TRANSLATIONS = {
         footer2: '✓ 100% Diskret',
         footer3: '✓ Ægte profiler',
         unsubHeadline: 'Du er blevet afmeldt',
-        unsubMessage: 'Din e-mail er blevet fjernet fra vores liste. Du vil ikke modtage flere e-mails fra os.'
+        unsubMessage: 'Din e-mail vil blive fjernet fra vores liste inden for 24 timer. Du vil ikke modtage flere e-mails fra os.'
     },
     no: {
         headline: 'Tilgang begrenset til 18+ kun!',
@@ -90,7 +90,7 @@ const TRANSLATIONS = {
         footer2: '✓ 100% Diskret',
         footer3: '✓ Ekte profiler',
         unsubHeadline: 'Du har blitt avmeldt',
-        unsubMessage: 'E-postadressen din er fjernet fra listen vår. Du vil ikke motta flere e-poster fra oss.'
+        unsubMessage: 'E-postadressen din vil bli fjernet fra listen vår innen 24 timer. Du vil ikke motta flere e-poster fra oss.'
     },
     fi: {
         headline: 'Pääsy rajoitettu vain 18+!',
@@ -101,9 +101,11 @@ const TRANSLATIONS = {
         footer2: '✓ 100% Diskret',
         footer3: '✓ Aitoja profiileja',
         unsubHeadline: 'Sinut on poistettu postituslistalta',
-        unsubMessage: 'Sähköpostiosoitteesi on poistettu listaltamme. Et saa enää sähköpostiviestejä meiltä.'
+        unsubMessage: 'Sähköpostiosoitteesi poistetaan listaltamme 24 tunnin kuluessa. Et saa enää sähköpostiviestejä meiltä.'
     }
 };
+
+
 
 // Get browser language
 function getBrowserLanguage() {
